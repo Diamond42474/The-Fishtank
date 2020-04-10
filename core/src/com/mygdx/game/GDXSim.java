@@ -2,32 +2,55 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics.DisplayMode;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
+import Assets.Asset_Manager;
+import Assets.Assets;
+import World.Map;
 
 public class GDXSim extends ApplicationAdapter {
-	SpriteBatch batch;
-	Texture img;
+	private OrthographicCamera camera;
 	
 	@Override
 	public void create () {
-		batch = new SpriteBatch();
-		img = new Texture("badlogic.jpg");
+		World.Generator.startup();
+		Asset_Manager.load_assets();
+		
+		camera = new OrthographicCamera(Map.width, Map.hight);
+		camera.translate(camera.viewportWidth/2, camera.viewportHeight/2);
+		
 	}
-
+	
 	@Override
 	public void render () {
-		Gdx.gl.glClearColor(1, 0, 0, 1);
+		Gdx.gl.glClearColor(0.02f, 0.01f, 0.03f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		batch.begin();
-		batch.draw(img, 0, 0);
-		batch.end();
+		camera.update();
+		Assets.shapeRenderer.setProjectionMatrix(camera.combined);
+		Assets.sprite_batch.begin();
+		Assets.sprite_batch.setProjectionMatrix(camera.combined);
+		Asset_Manager.draw.main();
+		Assets.sprite_batch.end();
+		Asset_Manager.draw.shapes();
+		Fish.Fish.update();
+		if(Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+			World.Generator.startup();
+		}
 	}
 	
 	@Override
 	public void dispose () {
-		batch.dispose();
-		img.dispose();
+		Assets.sprite_batch.dispose();
+		Asset_Manager.dispose_assets();
 	}
 }
