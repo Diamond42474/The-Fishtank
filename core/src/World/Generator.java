@@ -15,19 +15,19 @@ public class Generator {
 	private static void generate() {
 		for(int i=0;i<Map.configurations.starting.starting_energy;i++) {
 			Random r = new Random();
-			int[] q = {r.nextInt(Map.width-8),r.nextInt(Map.hight-8)};
+			int[] q = {4+r.nextInt(Map.width-12),4+r.nextInt(Map.hight-12)};
 			Map.objects.energy_blocks.add(q);
 		}
 		
 		for(int i=0;i<Map.configurations.starting.starting_temp_blocks_warm;i++) {
 			Random r = new Random();
-			int[] q = {r.nextInt(Map.width-32),r.nextInt(Map.hight-32)};
+			int[] q = {16+r.nextInt(Map.width-48),16+r.nextInt(Map.hight-48)};
 			Map.objects.temp_blocks_warm.add(q);
 		}
 		
 		for(int i=0;i<Map.configurations.starting.starting_temp_blocks_cold;i++) {
 			Random r = new Random();
-			int[] q = {r.nextInt(Map.width-32),r.nextInt(Map.hight-32)};
+			int[] q = {16+r.nextInt(Map.width-48),16+r.nextInt(Map.hight-48)};
 			Map.objects.temp_blocks_cold.add(q);
 		}
 	}

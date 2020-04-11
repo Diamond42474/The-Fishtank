@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import Assets.Asset_Manager;
 import Assets.Assets;
+import Fish.Tank;
 import World.Map;
 
 public class GDXSim extends ApplicationAdapter {
@@ -25,6 +26,7 @@ public class GDXSim extends ApplicationAdapter {
 	public void create () {
 		World.Generator.startup();
 		Asset_Manager.load_assets();
+		Fish.Manager.startup();
 		
 		camera = new OrthographicCamera(Map.width, Map.hight);
 		camera.translate(camera.viewportWidth/2, camera.viewportHeight/2);
@@ -42,7 +44,7 @@ public class GDXSim extends ApplicationAdapter {
 		Asset_Manager.draw.main();
 		Assets.sprite_batch.end();
 		Asset_Manager.draw.shapes();
-		Fish.Fish.update();
+		Fish.Manager.update();
 		if(Gdx.input.isKeyJustPressed(Input.Keys.A)) {
 			World.Generator.startup();
 		}
