@@ -47,6 +47,8 @@ project(":desktop") {
         api "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+      
+        
         
     }
 }
@@ -54,10 +56,11 @@ project(":desktop") {
 project(":core") {
     apply plugin: "java-library"
 
-
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
-        
+		compile "org.deeplearning4j:deeplearning4j-core:1.0.0-beta6"
+		compile "org.nd4j:nd4j-native-platform:1.0.0-beta6"
+		compile 'org.slf4j:slf4j-nop:1.7.25'
     }
 }

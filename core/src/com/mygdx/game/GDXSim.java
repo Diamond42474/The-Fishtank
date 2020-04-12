@@ -1,5 +1,7 @@
 package com.mygdx.game;
 
+import org.nd4j.linalg.factory.Nd4j;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics.DisplayMode;
@@ -30,7 +32,8 @@ public class GDXSim extends ApplicationAdapter {
 		
 		camera = new OrthographicCamera(Map.width, Map.hight);
 		camera.translate(camera.viewportWidth/2, camera.viewportHeight/2);
-		
+		Brain.Brain_Collection.setup();
+		System.out.println(Brain.Brain_Collection.net1.compute.calculate(new double[]{1,1})[0]);
 	}
 	
 	@Override

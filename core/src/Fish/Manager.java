@@ -5,7 +5,7 @@ import java.util.Random;
 import World.Map;
 
 public class Manager {
-	private static int count = 50;
+	private static int count = 5;
 
 	public static void startup() {
 		for (int i = 0; i < count; i++) {

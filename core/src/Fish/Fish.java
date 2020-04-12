@@ -33,23 +33,39 @@ public class Fish {
 				double distance(float x2, float y2) {
 					return Math.sqrt(Math.pow((coordinates.x - x2), 2) + Math.pow((coordinates.y - y2), 2));
 				}
+
 				double angle(float x2, float y2) {
 					x2 -= coordinates.x;
 					y2 -= coordinates.y;
-					double radiant = Math.atan(y2/x2);
-				    double angle = radiant * (180/Math.PI);	
-				    return angle;
+					double radiant = Math.atan(y2 / x2);
+					double angle = radiant * (180 / Math.PI);
+					return angle;
 				}
+
 				int[] polar_to_rectangular(float r, double angle, float x3, float x2) {
-					x2-=x3;
-					if(x2<=0) {
-						r=0-r;
+					x2 -= x3;
+					if (x2 <= 0) {
+						r = 0 - r;
 					}
-					double radiant = angle * (Math.PI/180);
-				    double x = r * Math.cos(radiant);
-				    double y = r * Math.sin(radiant);
-					return  new int[]{(int) x,(int) y};
+					double radiant = angle * (Math.PI / 180);
+					double x = r * Math.cos(radiant);
+					double y = r * Math.sin(radiant);
+					return new int[] { (int) x, (int) y };
 				}
+			}
+
+			ArrayList<int[]> fish() {
+				int size = Tank.list.size();
+				ArrayList<int[]> list = new ArrayList<int[]>();
+				for (int i = 0; i < size; i++) {
+					float x = Tank.list.get(i).coordinates.get_X();
+					float y = Tank.list.get(i).coordinates.get_Y();
+					double distance = trig.distance(x, y);
+					if (distance < mutatable.visual_range) {
+						list.add(new int[] { (int) x, (int) y });
+					}
+				}
+				return list;
 			}
 
 			ArrayList<int[]> food() {
@@ -134,12 +150,13 @@ public class Fish {
 			public void Shapes() {
 				drawer.normal.make_circle(coordinates.x, coordinates.y, mutatable.visual_range, Color.BLUE);
 				drawer.normal.make_circle(coordinates.x, coordinates.y, basic.interaction_zone, Color.RED);
-				
+
 				drawer.list.circles(32, Color.RED, inputs.temp_block.warm());
-				drawer.list.line(Color.RED, inputs.temp_block.warm());
+				drawer.list.line(Color.RED, inputs.temp_block.warm(),32);
 				drawer.list.circles(32, Color.RED, inputs.temp_block.cold());
-				drawer.list.line(Color.RED, inputs.temp_block.cold());
+				drawer.list.line(Color.RED, inputs.temp_block.cold(),32);
 				drawer.list.circles(8, Color.YELLOW, inputs.food());
+				drawer.list.line(Color.RED, inputs.fish(),basic.interaction_zone);
 			}
 
 			class Drawer {
@@ -156,9 +173,9 @@ public class Fish {
 						}
 					}
 
-					void line(Color color, ArrayList<int[]> list) {
+					void line(Color color, ArrayList<int[]> list, int r2) {
 						for (int i = 0; i < list.size(); i++) {
-							normal.make_line(list.get(i)[0], list.get(i)[1], color, 32);
+							normal.make_line(list.get(i)[0], list.get(i)[1], color, r2);
 						}
 					}
 				}
@@ -171,13 +188,14 @@ public class Fish {
 						Assets.Assets.shapeRenderer.end();
 					}
 
-					void make_line(int x2, int y2, Color color,int radius2) {
+					void make_line(int x2, int y2, Color color, int radius2) {
 						Assets.Assets.shapeRenderer.setColor(color);
 						Assets.Assets.shapeRenderer.begin(ShapeType.Line);
 						double angle = inputs.trig.angle(x2, y2);
-						int[] rc = inputs.trig.polar_to_rectangular(basic.interaction_zone, angle,coordinates.x,x2);
-						int[] rc2 = inputs.trig.polar_to_rectangular(radius2, angle,x2, coordinates.x);
-						Assets.Assets.shapeRenderer.line(rc[0]+coordinates.x, rc[1]+coordinates.y, x2+rc2[0],y2+rc2[1]);
+						int[] rc = inputs.trig.polar_to_rectangular(basic.interaction_zone, angle, coordinates.x, x2);
+						int[] rc2 = inputs.trig.polar_to_rectangular(radius2, angle, x2, coordinates.x);
+						Assets.Assets.shapeRenderer.line(rc[0] + coordinates.x, rc[1] + coordinates.y, x2 + rc2[0],
+								y2 + rc2[1]);
 						Assets.Assets.shapeRenderer.end();
 					}
 				}
@@ -225,7 +243,7 @@ public class Fish {
 
 	public class Mutatable {
 		private int visual_range = 100;
-		private float speed = 5f;
+		private float speed = 1f;
 
 		public void set_Visual_Range(int range) {
 			visual_range = range;
