@@ -1,5 +1,7 @@
 package Brain;
 
+import java.util.ArrayList;
+
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration.ListBuilder;
@@ -14,14 +16,35 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
+import Brain.Neural_Network.Experience.Settings;
+
 public class Neural_Network {
 	private Parameters parameters = new Parameters();
 	private MultiLayerNetwork net;
+	private MultiLayerNetwork target_net;
 	public Compute compute = new Compute();
+	public Experience experience = new Experience();
+	private ArrayList<Brain.Experience> experiences = new ArrayList<Brain.Experience>();
+	
+	public class Experience{
+		Settings settings = new Settings();
+		class Settings{
+			final int max_Storage = 10000;
+		}
+		void manage() {
+			if(experiences.size()>settings.max_Storage) {
+				experiences.remove(0);
+			}
+		}
+		public void add_experience(Brain.Experience exp) {
+			experiences.add(exp);
+			manage();
+		}
+	}
 	
 	public class Compute{
 		public double[] calculate(double[] input) {
-			INDArray in = Nd4j.zeros(1, 2);
+			INDArray in = Nd4j.zeros(1, parameters.inputs);
 			for(int i = 0;i<parameters.inputs;i++) {
 				in.putScalar(new int[]{0, i},input[i]);
 			}
@@ -31,6 +54,19 @@ public class Neural_Network {
 				out2[i]=out.getDouble(i);
 			}
 			return out2;
+		}
+		public int get_action(double[] state) {
+			double[] outputs = calculate(state);
+			int action = 0;
+			double value = 0;
+			for(int i = 0;i<outputs.length;i++) {
+				System.out.println(outputs[i]);
+				if(outputs[i]>value) {
+					value=outputs[i];
+					action=i;
+				}
+			}
+			return action;
 		}
 	}
 
@@ -77,6 +113,7 @@ public class Neural_Network {
 		MultiLayerNetwork neto = new MultiLayerNetwork(configure);
 		neto.init();
 		net = neto;
+		target_net = neto;
 		
 	}
 }

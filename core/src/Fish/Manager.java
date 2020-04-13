@@ -24,6 +24,7 @@ public class Manager {
 		Fish f = new Fish();
 		Random r = new Random();
 		f.coordinates.set_spawn(4+r.nextInt(Map.width-24), 4+r.nextInt(Map.hight-24));
+		f.basic.set_brain(1);
 		return f;
 	}
 }

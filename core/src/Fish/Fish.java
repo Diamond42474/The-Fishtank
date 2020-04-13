@@ -7,6 +7,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
+import Brain.Rewards;
 import World.Map;
 
 public class Fish {
@@ -20,11 +21,114 @@ public class Fish {
 		private Inputs inputs = new Inputs();
 		public Display display = new Display();
 		public Movement movement = new Movement();
-
+		public Thinking thinking = new Thinking();
+		public Actions actions = new Actions();
 		public void Update() {
-			movement.keys();
+			actions.act();
+			//movement.keys();
 		}
-
+		public class Thinking{
+			double[] get_state() {
+				return new double[] {coordinates.x,coordinates.y};
+			}
+			/*
+			double[] get_future_state(Fish fish, int action) {
+				Fish f = fish;
+				f.updater.actions.shadow_act(action);
+				return f.updater.thinking.get_state();
+			}
+			*/
+		}
+		class Actions{
+			Move move = new Move();
+			void act() {
+				int a = get_action();
+				Brain.Experience exp = new Brain.Experience();
+				exp.state = thinking.get_state();
+				exp.action = a;
+				exp.reward = choose(a);
+				exp.state = thinking.get_state();
+				add_experience(exp);
+			}
+			void add_experience(Brain.Experience exp){
+				switch(basic.Brain) {
+				case 1:
+					Brain.Brain_Collection.net1.experience.add_experience(exp);
+					break;
+				case 2:
+					Brain.Brain_Collection.net2.experience.add_experience(exp);
+					break;
+				default: 
+					System.out.println("Brain isnt right 1 ---"+ basic.Brain);
+				}
+			}
+			int get_action() {
+				switch(basic.Brain) {
+				case 1:
+					return Brain.Brain_Collection.net1.compute.get_action(thinking.get_state());
+				case 2:
+					return Brain.Brain_Collection.net2.compute.get_action(thinking.get_state());
+				default: 
+					System.out.println("Brain isnt right 2 ---");
+					return Brain.Brain_Collection.net1.compute.get_action(thinking.get_state());
+				}
+			}
+			double choose(int a) {
+				switch(a) {
+				case 0: 
+					return move.Up();
+				case 1: 
+					return move.Down();
+				case 2:
+					return move.Left();
+				case 3: 
+					return move.Right();
+				default:
+					return 0.0;
+				}
+			}
+			/*
+			void shadow_act(int a) {
+				//just do stuff
+			}
+			*/
+			class Move{
+				void Position_Manager() {
+					if ((coordinates.x + 8) > Map.width) {
+						coordinates.x = Map.width - 8;
+					}
+					if ((coordinates.x) < 8) {
+						coordinates.x = 8;
+					}
+					if ((coordinates.y + 8) > Map.hight) {
+						coordinates.y = Map.hight - 8;
+					}
+					if ((coordinates.y) < 8) {
+						coordinates.y = 8;
+					}
+				}
+				double Up() {
+					coordinates.y+=mutatable.speed;
+					Position_Manager();
+					return Rewards.move;
+				}
+				double Down() {
+					coordinates.y-=mutatable.speed;
+					Position_Manager();
+					return Rewards.move;
+				}
+				double Left() {
+					coordinates.x-=mutatable.speed;
+					Position_Manager();
+					return Rewards.move;
+				}
+				double Right() {
+					coordinates.x+=mutatable.speed;
+					Position_Manager();
+					return Rewards.move;
+				}
+			}
+		}
 		private class Inputs {
 			Trig trig = new Trig();
 			Temp_Block temp_block = new Temp_Block();
@@ -223,7 +327,7 @@ public class Fish {
 		private float x = 8;
 		private float y = 8;
 
-		public void set_spawn(int x1, int y1) {
+		public void set_spawn(float x1, float y1) {
 			x = x1;
 			y = y1;
 		}
@@ -236,9 +340,12 @@ public class Fish {
 			return y;
 		}
 	}
-
 	public class Basic {
 		final int interaction_zone = 16;
+		private int Brain = 1;
+		public void set_brain(int b) {
+			Brain = b;
+		}
 	}
 
 	public class Mutatable {

@@ -33,7 +33,7 @@ public class GDXSim extends ApplicationAdapter {
 		camera = new OrthographicCamera(Map.width, Map.hight);
 		camera.translate(camera.viewportWidth/2, camera.viewportHeight/2);
 		Brain.Brain_Collection.setup();
-		System.out.println(Brain.Brain_Collection.net1.compute.calculate(new double[]{1,1})[0]);
+		//System.out.println(Brain.Brain_Collection.net1.compute.calculate(new double[]{1,1})[0]);
 	}
 	
 	@Override
