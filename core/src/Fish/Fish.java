@@ -1,12 +1,15 @@
 package Fish;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 
+import Brain.Q_Learning;
 import Brain.Rewards;
 import World.Map;
 
@@ -16,6 +19,19 @@ public class Fish {
 	public Coordinates coordinates = new Coordinates();
 	public Stats stats = new Stats();
 	public Updater updater = new Updater();
+	private Lists lists = new Lists();
+
+	public class Lists {
+		Settings settings = new Settings();
+		ArrayList<int[]> fish;
+		ArrayList<int[]> food;
+		ArrayList<int[]> temp_blocks_warm;
+		ArrayList<int[]> temp_blocks_cold;
+
+		class Settings {
+			final int visual_number = 3;
+		}
+	}
 
 	public class Updater {
 		private Inputs inputs = new Inputs();
@@ -23,76 +39,155 @@ public class Fish {
 		public Movement movement = new Movement();
 		public Thinking thinking = new Thinking();
 		public Actions actions = new Actions();
+
 		public void Update() {
+			stats.time.tick();
 			actions.act();
-			//movement.keys();
+			//thinking.train();
+			// movement.keys();
 		}
-		public class Thinking{
+
+		public class Thinking {
+			void train() {
+				switch(basic.Brain) {
+				case 1:
+					Brain.Brain_Collection.net1.compute.training.Train();
+					break;
+				case 2:
+					Brain.Brain_Collection.net2.compute.training.Train();
+				}
+			}
 			double[] get_state() {
-				return new double[] {coordinates.x,coordinates.y};
+				// total should be 28
+				int[][] fish = format_list(lists.fish);
+				int[][] food = format_list(lists.food);
+				int[][] temp_block_warm = format_list(lists.temp_blocks_warm);
+				int[][] temp_block_cold = format_list(lists.temp_blocks_cold);
+				double[] output = new double[Brain.Brain_Collection.net1.parameters.inputs];
+				output[0] = coordinates.x;
+				output[1] = coordinates.y;
+				output[2] = stats.time.get_time();
+				output[3] = stats.health.get_Health();
+				for (int i = 4; i < output.length;) {
+					for (int ie = 0; ie < lists.settings.visual_number; ie++) {
+						output[i] = fish[ie][0];
+						output[i+1] = fish[ie][1];
+
+						output[i+2] = food[ie][0];
+						output[i+3] = food[ie][1];
+
+						output[i+4] = temp_block_warm[ie][0];
+						output[i+5] = temp_block_warm[ie][1];
+
+						output[i+6] = temp_block_cold[ie][0];
+						output[i+7] = temp_block_cold[ie][1];
+						i += 8;
+					}
+				}
+				return output;
+			}
+
+			int[][] format_list(ArrayList<int[]> array) {
+				for (int i = array.size(); i != lists.settings.visual_number;) {
+					if (array.size() > lists.settings.visual_number) {
+						array.remove(array.size() - 1);
+					}
+					if (array.size() < lists.settings.visual_number) {
+						array.add(new int[] { 0, 0, 0 });
+					}
+					i = array.size();
+				}
+				int[][] out = new int[array.size()][];
+				for (int i = 0; i < array.size(); i++) {
+					out[i] = array.get(i);
+				}
+				return out;
 			}
 			/*
-			double[] get_future_state(Fish fish, int action) {
-				Fish f = fish;
-				f.updater.actions.shadow_act(action);
-				return f.updater.thinking.get_state();
-			}
-			*/
+			 * double[] get_future_state(Fish fish, int action) { Fish f = fish;
+			 * f.updater.actions.shadow_act(action); return f.updater.thinking.get_state();
+			 * }
+			 */
 		}
-		class Actions{
+
+		class Actions {
 			Move move = new Move();
+
 			void act() {
 				int a = get_action();
 				Brain.Experience exp = new Brain.Experience();
 				exp.state = thinking.get_state();
 				exp.action = a;
 				exp.reward = choose(a);
-				exp.state = thinking.get_state();
+				exp.state_prime = thinking.get_state();
 				add_experience(exp);
 			}
-			void add_experience(Brain.Experience exp){
-				switch(basic.Brain) {
+
+			double get_reward(double initial) {
+				//return initial + stats.time.get_time();
+				return initial;
+			}
+
+			void add_experience(Brain.Experience exp) {
+				switch (basic.Brain) {
 				case 1:
 					Brain.Brain_Collection.net1.experience.add_experience(exp);
 					break;
 				case 2:
 					Brain.Brain_Collection.net2.experience.add_experience(exp);
 					break;
-				default: 
-					System.out.println("Brain isnt right 1 ---"+ basic.Brain);
+				default:
+					System.out.println("Brain isnt right 1 ---" + basic.Brain);
 				}
 			}
+
 			int get_action() {
-				switch(basic.Brain) {
+				switch (basic.Brain) {
 				case 1:
-					return Brain.Brain_Collection.net1.compute.get_action(thinking.get_state());
+					return Brain.Brain_Collection.net1.compute.get_action_net(thinking.get_state(),stats.time.get_time());
 				case 2:
-					return Brain.Brain_Collection.net2.compute.get_action(thinking.get_state());
-				default: 
+					return Brain.Brain_Collection.net2.compute.get_action_net(thinking.get_state(),stats.time.get_time());
+				default:
 					System.out.println("Brain isnt right 2 ---");
-					return Brain.Brain_Collection.net1.compute.get_action(thinking.get_state());
+					return Brain.Brain_Collection.net1.compute.get_action_net(thinking.get_state(),stats.time.get_time());
 				}
 			}
+
 			double choose(int a) {
-				switch(a) {
-				case 0: 
+				switch (a) {
+				case 0:
 					return move.Up();
-				case 1: 
+				case 1:
 					return move.Down();
 				case 2:
 					return move.Left();
-				case 3: 
+				case 3:
 					return move.Right();
+				case 4:
+					return move.Stay_Still();
+				case 5:
+					return Eat();
 				default:
 					return 0.0;
 				}
 			}
+
 			/*
-			void shadow_act(int a) {
-				//just do stuff
+			 * void shadow_act(int a) { //just do stuff }
+			 */
+			double Eat() {
+				if(lists.food.get(0)[2]<basic.interaction_zone&&lists.food.size()>0) {
+					try {
+						Map.objects.energy_blocks.remove(lists.food.get(0)[3]);
+					}catch(Exception e) {
+						//System.out.println(lists.food.get(0).length);
+					}
+					return get_reward(Rewards.eat);
+				}else{
+					return 0;
+				}
 			}
-			*/
-			class Move{
+			class Move {
 				void Position_Manager() {
 					if ((coordinates.x + 8) > Map.width) {
 						coordinates.x = Map.width - 8;
@@ -107,31 +202,70 @@ public class Fish {
 						coordinates.y = 8;
 					}
 				}
+
 				double Up() {
-					coordinates.y+=mutatable.speed;
+					coordinates.y += mutatable.speed;
 					Position_Manager();
-					return Rewards.move;
+					return get_reward(Rewards.move);
 				}
+
 				double Down() {
-					coordinates.y-=mutatable.speed;
+					coordinates.y -= mutatable.speed;
 					Position_Manager();
-					return Rewards.move;
+					return get_reward(Rewards.move);
 				}
+
 				double Left() {
-					coordinates.x-=mutatable.speed;
+					coordinates.x -= mutatable.speed;
 					Position_Manager();
-					return Rewards.move;
+					return get_reward(Rewards.move);
 				}
+
 				double Right() {
-					coordinates.x+=mutatable.speed;
+					coordinates.x += mutatable.speed;
 					Position_Manager();
-					return Rewards.move;
+					return get_reward(Rewards.move);
+				}
+
+				double Stay_Still() {
+					Position_Manager();
+					return 0;
 				}
 			}
 		}
+
 		private class Inputs {
 			Trig trig = new Trig();
 			Temp_Block temp_block = new Temp_Block();
+			Sort sort = new Sort();
+
+			class Sort {
+				ArrayList<int[]> sortbyColumn(ArrayList<int[]> array, final int col) {
+					int[][] arr = new int[array.size()][4];
+					for (int i = 0; i < array.size(); i++) {
+						arr[i] = array.get(i);
+					}
+					try {
+						Arrays.sort(arr, new Comparator<int[]>() {
+
+							@Override
+							public int compare(final int[] entry1, final int[] entry2) {
+								if (entry1[col] > entry2[col])
+									return 1;
+								else
+									return -1;
+							}
+						});
+					}catch(Exception e) {
+						e.printStackTrace();
+					}
+					array.clear();
+					for (int i = 0; i < arr.length; i++) {
+						array.add(new int[] { arr[i][0], arr[i][1], arr[i][2],arr[i][3]});
+					}
+					return array;
+				}
+			}
 
 			class Trig {
 				double distance(float x2, float y2) {
@@ -166,9 +300,12 @@ public class Fish {
 					float y = Tank.list.get(i).coordinates.get_Y();
 					double distance = trig.distance(x, y);
 					if (distance < mutatable.visual_range) {
-						list.add(new int[] { (int) x, (int) y });
+						list.add(new int[] { (int) x, (int) y, (int) distance,i });
 					}
 				}
+				list = sort.sortbyColumn(list, 2);
+				list.remove(0);
+				lists.fish = list;
 				return list;
 			}
 
@@ -179,9 +316,12 @@ public class Fish {
 					int[] q = Map.objects.energy_blocks.get(i);
 					double distance = trig.distance(q[0], q[1]);
 					if (distance < mutatable.visual_range) {
-						list.add(new int[] { q[0], q[1] });
+						int index = i;
+						list.add(new int[] { q[0], q[1], (int) distance ,index});
 					}
 				}
+				list = sort.sortbyColumn(list, 2);
+				lists.food = list;
 				return list;
 			}
 
@@ -193,9 +333,11 @@ public class Fish {
 						int[] q = Map.objects.temp_blocks_warm.get(i);
 						double distance = trig.distance(q[0], q[1]);
 						if (distance < mutatable.visual_range) {
-							list.add(new int[] { q[0], q[1] });
+							list.add(new int[] { q[0], q[1], (int) distance,i });
 						}
 					}
+					list = sort.sortbyColumn(list, 2);
+					lists.temp_blocks_warm = list;
 					return list;
 				}
 
@@ -206,9 +348,11 @@ public class Fish {
 						int[] q = Map.objects.temp_blocks_cold.get(i);
 						double distance = trig.distance(q[0], q[1]);
 						if (distance < mutatable.visual_range) {
-							list.add(new int[] { q[0], q[1] });
+							list.add(new int[] { q[0], q[1], (int) distance,i });
 						}
 					}
+					list = sort.sortbyColumn(list, 2);
+					lists.temp_blocks_cold = list;
 					return list;
 				}
 			}
@@ -256,11 +400,11 @@ public class Fish {
 				drawer.normal.make_circle(coordinates.x, coordinates.y, basic.interaction_zone, Color.RED);
 
 				drawer.list.circles(32, Color.RED, inputs.temp_block.warm());
-				drawer.list.line(Color.RED, inputs.temp_block.warm(),32);
+				drawer.list.line(Color.RED, inputs.temp_block.warm(), 32);
 				drawer.list.circles(32, Color.RED, inputs.temp_block.cold());
-				drawer.list.line(Color.RED, inputs.temp_block.cold(),32);
+				drawer.list.line(Color.RED, inputs.temp_block.cold(), 32);
 				drawer.list.circles(8, Color.YELLOW, inputs.food());
-				drawer.list.line(Color.RED, inputs.fish(),basic.interaction_zone);
+				drawer.list.line(Color.RED, inputs.fish(), basic.interaction_zone);
 			}
 
 			class Drawer {
@@ -309,6 +453,19 @@ public class Fish {
 
 	public class Stats {
 		public Health health = new Health();
+		public Time time = new Time();
+
+		public class Time {
+			private int time_alive = 0;
+
+			public void tick() {
+				time_alive++;
+			}
+
+			public int get_time() {
+				return time_alive;
+			}
+		}
 
 		public class Health {
 			private int health = 100;
@@ -340,9 +497,11 @@ public class Fish {
 			return y;
 		}
 	}
+
 	public class Basic {
-		final int interaction_zone = 16;
+		final int interaction_zone = 32;
 		private int Brain = 1;
+
 		public void set_brain(int b) {
 			Brain = b;
 		}

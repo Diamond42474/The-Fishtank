@@ -5,7 +5,7 @@ import java.util.Random;
 import World.Map;
 
 public class Manager {
-	private static int count = 5;
+	private static int count = 15;
 
 	public static void startup() {
 		for (int i = 0; i < count; i++) {
@@ -15,6 +15,7 @@ public class Manager {
 	}
 
 	public static void update() {
+		Brain.Learning_Tracker.train();
 		for (int i = 0; i < Tank.list.size(); i++) {
 			Tank.list.get(i).updater.Update();
 		}
